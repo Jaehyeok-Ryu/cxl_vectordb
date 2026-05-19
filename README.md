@@ -67,16 +67,16 @@ pip install -r requirements.txt
 # 데이터셋 다운로드 및 로컬 디렉토리 저장
 python3 download_huggingface.py \
     --hf-dir "Shahzebbb/c4_100gb" \
-    --save-dir "/home/cxl_qemu/cxl_vectordb/Data/c4_100gb"
+    --save-dir "/home/<username>/cxl_vectordb/Data/c4_100gb"
 ```
 
 ### 2. BGE 임베딩 모델 준비
-* **자동 다운로드**: `run_gpu_ingestion.sh`를 실행할 때, HuggingFace 허브로부터 **`BAAI/bge-base-en-v1.5`** 모델과 토크나이저가 로컬 캐시 경로(`/home/cxl_qemu/.cache/huggingface`)로 자동 캐싱됩니다.
+* **자동 다운로드**: `run_gpu_ingestion.sh`를 실행할 때, HuggingFace 허브로부터 **`BAAI/bge-base-en-v1.5`** 모델과 토크나이저가 로컬 캐시 경로(`/home/<username>/.cache/huggingface`)로 자동 캐싱됩니다.
 * **오프라인 사전 준비 (선택사항)**: 네트워크 속도가 느리거나 수동으로 미리 캐싱하고 싶은 경우, 아래 명령어를 실행하여 로컬 디렉토리에 직접 다운로드해 둘 수 있습니다.
 ```bash
 python3 download_huggingface.py \
     --embedding-model "BAAI/bge-base-en-v1.5" \
-    --save-dir "/home/cxl_qemu/.cache/huggingface"
+    --save-dir "/home/<username>/.cache/huggingface"
 ```
 
 ---
