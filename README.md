@@ -48,14 +48,23 @@ cxl_vectordb/
 
 ## 📥 사전 준비: 데이터셋 및 모델 다운로드 (Prerequisites)
 
-GPU 서버에서 원격 Ingestion을 구동하기 위해 필요한 **대용량 데이터셋**과 **임베딩 모델**을 다운로드하고 준비합니다. 이 작업은 `gpu_side/download_huggingface.py` 스크립트를 통해 안전하게 수행할 수 있습니다.
+GPU 서버에서 원격 Ingestion을 구동하기 위해 필요한 **파이썬 패키지 환경**과 **대용량 데이터셋**, **임베딩 모델**을 다운로드하고 준비합니다.
 
-### 1. C4 데이터셋 다운로드 (약 61GB)
-원본 데이터셋(`Shahzebbb/c4_100gb`)을 GPU 서버의 로컬 디렉토리에 저장합니다.
+### 0. GPU 서버 파이썬 패키지 환경 구성 (Environment Setup)
+먼저 GPU 서버에서 스크립트 실행 및 라이브러리 가동을 위한 필수 패키지들을 설치합니다. `gpu_side/requirements.txt`를 통해 간편하게 일괄 설치가 가능합니다.
+
 ```bash
 cd gpu_side
 
-# 데이터셋 다운로드 및 로컬 캐싱
+# 필수 AI 및 Qdrant 라이브러리 일괄 설치
+pip install -r requirements.txt
+```
+
+### 1. C4 데이터셋 다운로드 (약 61GB)
+원본 데이터셋(`Shahzebbb/c4_100gb`)을 GPU 서버의 로컬 디렉토리에 저장합니다. `download_huggingface.py` 스크립트를 통해 안전하게 다운로드할 수 있습니다.
+
+```bash
+# 데이터셋 다운로드 및 로컬 디렉토리 저장
 python3 download_huggingface.py \
     --hf-dir "Shahzebbb/c4_100gb" \
     --save-dir "/home/cxl_qemu/cxl_vectordb/Data/c4_100gb"
