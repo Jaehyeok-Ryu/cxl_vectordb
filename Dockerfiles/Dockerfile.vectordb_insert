@@ -1,0 +1,25 @@
+# ============================================================
+# Dockerfile.vectordb_insert
+# ============================================================
+# GPU 없는 서버에서 사용 (Mode A: 사전 임베딩 데이터를 Qdrant에 삽입)
+# 필요한 의존성: qdrant-client, datasets
+# PyTorch / transformers 미포함 (이미지 크기 최소화)
+# ============================================================
+
+FROM python:3.11-slim
+
+# 시스템 의존성
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python 패키지 설치 (임베딩 라이브러리 제외)
+RUN pip install --no-cache-dir \
+    qdrant-client==1.9.1 \
+    datasets==2.19.2 \
+    pyarrow
+
+WORKDIR /app
+COPY build_vectorDB.py /app/build_vectorDB.py
+
+CMD ["python3", "/app/build_vectorDB.py"]
