@@ -50,7 +50,7 @@ python3 build_vectorDB.py \
     --port "$QDRANT_PORT" \
     --collection-name "$COLLECTION_NAME" \
     --text-field "text" \
-    --document-count 100000 # 테스트용으로 100,000건 제한 지정 (전체는 제거하거나 큰 값 지정)
+    # --document-count 100000 # 테스트용으로 100,000건 제한 지정 (전체는 제거하거나 큰 값 지정)
 
 echo "========================================================================="
 echo "🎉 Ingestion Complete! VectorDB is successfully built on $QDRANT_HOST."
