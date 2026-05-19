@@ -46,7 +46,7 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 echo "===================================================================="
-echo "🚀 듀얼 소켓 격리 Qdrant VectorDB 가동을 시작합니다."
+echo " 듀얼 소켓 격리 Qdrant VectorDB 가동을 시작합니다."
 echo "   - 설정 정책: ${POLICY^^}"
 echo "===================================================================="
 
@@ -173,18 +173,18 @@ done
 # 7. 기동 완료 안내 출력
 HOST_IP=$(hostname -I | awk '{print $1}')
 echo "===================================================================="
-echo "🎉 Dual Qdrant VectorDB Instances Active!"
+echo " Dual Qdrant VectorDB Instances Active!"
 echo "===================================================================="
-echo "👉 Socket 0"
+echo "  Socket 0"
 echo "   - Container: $CONTAINER_0"
 echo "   - HTTP Port: 6333 | gRPC Port: 6334"
 echo "   - Storage  : $STORAGE_0"
 echo ""
-echo "👉 Socket 1 (DDR Node 1 / CXL Node 3)"
+echo "  Socket 1 (DDR Node 1 / CXL Node 3)"
 echo "   - Container: $CONTAINER_1"
 echo "   - HTTP Port: 6343 | gRPC Port: 6344"
 echo "   - Storage  : $STORAGE_1"
 echo "===================================================================="
-echo "💡 외부 GPU/클라이언트 설정 IP:"
+echo "  외부 GPU/클라이언트 설정 IP:"
 echo "   - CPU_SERVER_IP = \"$HOST_IP\""
 echo "===================================================================="

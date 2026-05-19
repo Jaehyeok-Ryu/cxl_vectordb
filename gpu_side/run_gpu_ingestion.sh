@@ -1,6 +1,6 @@
 #!/bin/bash
 # =========================================================================
-# 🚀 CXL VectorDB - GPU Ingestion & Remote Upload Script
+# CXL VectorDB - GPU Ingestion & Remote Upload Script
 # =========================================================================
 # * Description: GPU 서버에서 이 스크립트를 기동하여, 로컬 데이터셋을 GPU로
 #                초고속 임베딩하고 CPU 서버의 Qdrant VectorDB로 실시간 전송합니다.
@@ -23,12 +23,12 @@ MODEL_NAME="BAAI/bge-base-en-v1.5"
 MODEL_CACHE="/home/cxl_qemu/.cache/huggingface"
 
 echo "========================================================================="
-echo "⚙️  Start GPU Inline Embedding & Remote Ingestion"
+echo " Start GPU Inline Embedding & Remote Ingestion"
 echo "========================================================================="
-echo "🔗 Qdrant Target: $QDRANT_HOST:$QDRANT_PORT"
-echo "📂 Dataset Path : $DATASET_PATH"
-echo "🧠 Model Name   : $MODEL_NAME"
-echo "⚡ Batch Size   : $EMBED_BATCH_SIZE"
+echo " Qdrant Target: $QDRANT_HOST:$QDRANT_PORT"
+echo " Dataset Path : $DATASET_PATH"
+echo " Model Name   : $MODEL_NAME"
+echo " Batch Size   : $EMBED_BATCH_SIZE"
 echo "========================================================================="
 
 # 3. 데이터셋 폴더 존재 여부 검증
@@ -53,5 +53,5 @@ python3 build_vectorDB.py \
     # --document-count 100000 # 테스트용으로 100,000건 제한 지정 (전체는 제거하거나 큰 값 지정)
 
 echo "========================================================================="
-echo "🎉 Ingestion Complete! VectorDB is successfully built on $QDRANT_HOST."
+echo "Ingestion Complete! VectorDB is successfully built on $QDRANT_HOST."
 echo "========================================================================="
