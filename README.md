@@ -46,6 +46,32 @@ cxl_vectordb/
 
 ---
 
+## 📥 사전 준비: 데이터셋 및 모델 다운로드 (Prerequisites)
+
+GPU 서버에서 원격 Ingestion을 구동하기 위해 필요한 **대용량 데이터셋**과 **임베딩 모델**을 다운로드하고 준비합니다. 이 작업은 `gpu_side/download_huggingface.py` 스크립트를 통해 안전하게 수행할 수 있습니다.
+
+### 1. C4 데이터셋 다운로드 (약 61GB)
+원본 데이터셋(`Shahzebbb/c4_100gb`)을 GPU 서버의 로컬 디렉토리에 저장합니다.
+```bash
+cd gpu_side
+
+# 데이터셋 다운로드 및 로컬 캐싱
+python3 download_huggingface.py \
+    --hf-dir "Shahzebbb/c4_100gb" \
+    --save-dir "/home/cxl_qemu/cxl_vectordb/Data/c4_100gb"
+```
+
+### 2. BGE 임베딩 모델 준비
+* **자동 다운로드**: `run_gpu_ingestion.sh`를 실행할 때, HuggingFace 허브로부터 **`BAAI/bge-base-en-v1.5`** 모델과 토크나이저가 로컬 캐시 경로(`/home/cxl_qemu/.cache/huggingface`)로 자동 캐싱됩니다.
+* **오프라인 사전 준비 (선택사항)**: 네트워크 속도가 느리거나 수동으로 미리 캐싱하고 싶은 경우, 아래 명령어를 실행하여 로컬 디렉토리에 직접 다운로드해 둘 수 있습니다.
+```bash
+python3 download_huggingface.py \
+    --embedding-model "BAAI/bge-base-en-v1.5" \
+    --save-dir "/home/cxl_qemu/.cache/huggingface"
+```
+
+---
+
 ## 🏃‍♂️ 실행 가이드 (Execution Guide)
 
 ### 1️⃣ CPU 서버: Qdrant VectorDB 가동
