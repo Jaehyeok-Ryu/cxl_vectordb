@@ -117,7 +117,7 @@ cd gpu_side
 
 # 1. GPU 서버로 원격 VectorDB 대상 IP 및 포트를 인자로 주며 기동
 # Usage: ./run_gpu_ingestion.sh [QDRANT_HOST_IP] [QDRANT_PORT]
-./run_gpu_ingestion.sh 163.152.48.209 6333
+./run_gpu_ingestion.sh <CPU_SERVER_IP> 6333
 ```
 * **동작 메커니즘**: `run_gpu_ingestion.sh` 내에서 `build_vectorDB.py`가 가동되며, PyTorch/CUDA 가속을 통해 대량의 문서 배치(Batch Size: 512)를 초고속 임베딩하고 CPU 서버로 gRPC API를 통해 주입합니다.
 
