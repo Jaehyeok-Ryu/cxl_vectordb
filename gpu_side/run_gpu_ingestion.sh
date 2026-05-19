@@ -14,7 +14,7 @@ cd "$SCRIPT_DIR"
 # 2. 파라미터 기본값 설정
 QDRANT_HOST=${1:-"localhost"}  # Qdrant가 가동 중인 CPU 서버 IP (단일 서버인 경우 localhost)
 QDRANT_PORT=${2:-"6333"}
-EMBED_BATCH_SIZE=${3:-"512"}   # 기본 배치 사이즈를 512로 설정 (VRAM 여유가 커서 연산 효율이 극적으로 상승합니다)
+EMBED_BATCH_SIZE=${3:-"2048"}   # 기본 배치 사이즈를 512로 설정 (VRAM 여유가 커서 연산 효율이 극적으로 상승합니다)
 COLLECTION_NAME="wiki_passages"
 
 # 로컬 대형 데이터셋 경로 및 모델 설정

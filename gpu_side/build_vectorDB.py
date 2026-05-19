@@ -73,7 +73,7 @@ def encode_batch(texts, tokenizer, model, device: str, max_length: int = 512):
     대량의 텍스트 청크를 안전한 단위(mini_batch=512)로 쪼개어 GPU로 순차 전달함으로써,
     VRAM OOM(메모리 초과) 문제를 원천 차단하고 최고 수준의 병렬성을 유지합니다.
     """
-    mini_batch_size = 512
+    mini_batch_size = 2048
     all_embeddings = []
     
     for i in range(0, len(texts), mini_batch_size):
