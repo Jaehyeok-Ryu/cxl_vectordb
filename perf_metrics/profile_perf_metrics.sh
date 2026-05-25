@@ -93,15 +93,21 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # 컨테이너 상태 및 PID 확인
-echo "[INFO] 컨테이너 '$CONTAINER_NAME'의 상태를 검증합니다..."
-if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-  echo " [Error] 컨테이너 '${CONTAINER_NAME}'가 현재 실행 중이 아닙니다." >&2
-  exit 1
-fi
+if [ "$CONTAINER_NAME" = "system" ] || [ "$CONTAINER_NAME" = "all" ]; then
+  echo "[INFO] 시스템 전체(System-wide)를 대상으로 모니터링을 진행합니다 (컨테이너 검증 생략)."
+  PID="N/A (System-wide)"
+  VECTORDB_CPUS="All"
+else
+  echo "[INFO] 컨테이너 '$CONTAINER_NAME'의 상태를 검증합니다..."
+  if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+    echo " [Error] 컨테이너 '${CONTAINER_NAME}'가 현재 실행 중이 아닙니다." >&2
+    exit 1
+  fi
 
-PID=$(docker inspect --format '{{.State.Pid}}' "$CONTAINER_NAME")
-VECTORDB_CPUS=$(docker inspect --format '{{.HostConfig.CpusetCpus}}' "$CONTAINER_NAME")
-echo " 컨테이너가 확인되었습니다. (Host PID: $PID, CPUS: ${VECTORDB_CPUS:-All})"
+  PID=$(docker inspect --format '{{.State.Pid}}' "$CONTAINER_NAME")
+  VECTORDB_CPUS=$(docker inspect --format '{{.HostConfig.CpusetCpus}}' "$CONTAINER_NAME")
+  echo " 컨테이너가 확인되었습니다. (Host PID: $PID, CPUS: ${VECTORDB_CPUS:-All})"
+fi
 
 # ==============================================================================
 #  후보 성능 카운터 리스트 선언 (가설 1 검증 최적화)

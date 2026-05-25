@@ -1,4 +1,5 @@
 Data/*
+perf_metrics/perf_results/
 
 # Environment files
 .env
