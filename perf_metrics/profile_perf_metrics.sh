@@ -248,7 +248,13 @@ echo "   - Time   : $(date)" >> "$SUMMARY_TXT"
 echo "=========================================================================" >> "$SUMMARY_TXT"
 echo "" >> "$SUMMARY_TXT"
 
-echo "metric,run1,run2,run3,average,unit" > "$SUMMARY_CSV"
+# CSV 헤더 생성 (RUNS 횟수에 맞춰 동적 생성)
+csv_header="metric"
+for ((run=1; run<=RUNS; run++)); do
+  csv_header="${csv_header},run${run}"
+done
+csv_header="${csv_header},average,unit"
+echo "$csv_header" > "$SUMMARY_CSV"
 
 # 각 이벤트별로 N개 파일에 걸친 결과 파싱
 for ev in "${SUPPORTED_EVENTS[@]}"; do
@@ -303,8 +309,19 @@ echo "========================================================================="
 # 파싱 유틸리티 함수
 get_avg_val() {
   local target_event="$1"
-  # CSV에서 해당 이벤트의 평균 컬럼(5번째 열) 값 추출
-  local val=$(grep -iF "$target_event" "$SUMMARY_CSV" | cut -d',' -f5) || echo "0"
+  # CSV에서 해당 이벤트의 평균 컬럼(RUNS + 2번째 열) 값 추출
+  local avg_col=$((RUNS + 2))
+  local val=$(awk -F, -v target="$target_event" -v col="$avg_col" '
+    NR > 1 {
+      metric = $1;
+      sub(/\/$/, "", metric);
+      sub(/^uncore_[a-z0-9_#\-]+[\*0-9]*\//, "", metric);
+      if (metric == target) {
+        print $col;
+        exit;
+      }
+    }
+  ' "$SUMMARY_CSV") || echo "0"
   if [ -z "$val" ] || [ "$val" == "0" ] || [ "$val" == "0.00" ]; then echo "0.0001"; else echo "$val"; fi
 }
 
