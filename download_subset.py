@@ -32,7 +32,7 @@ def main():
     save_path = args.save_path
     
     print("=========================================================================", flush=True)
-    print("🚀 CommonCrawl CC Subset One-Time Downloader", flush=True)
+    print(" CommonCrawl CC Subset One-Time Downloader", flush=True)
     print("=========================================================================", flush=True)
     print(f"  - Target Dataset  : {dataset_name}", flush=True)
     print(f"  - Document Count  : {doc_limit:,} items", flush=True)
@@ -91,7 +91,7 @@ def main():
             total_size += os.path.getsize(os.path.join(dirpath, filename))
             
     print("=========================================================================", flush=True)
-    print("🎉 Downloader completed successfully!", flush=True)
+    print(" Downloader completed successfully!", flush=True)
     print("=========================================================================", flush=True)
     print(f"  - Total Elapsed Time : {elapsed_time:.1f} seconds ({elapsed_time/60:.1f} minutes)", flush=True)
     print(f"  - Saved Folder Size  : {total_size / (1024 * 1024 * 1024):.2f} GB", flush=True)

@@ -51,7 +51,7 @@ while [[ "$#" -gt 0 ]]; do
     --warmup) WARMUP_TIME="$2"; shift ;;
     --label) LABEL="$2"; shift ;;
     -h|--help) show_help ;;
-    *) echo "❌ [Error] 알 수 없는 옵션: $1"; show_help ;;
+    *) echo " [Error] 알 수 없는 옵션: $1"; show_help ;;
   esac
   shift
 done
@@ -60,51 +60,51 @@ done
 # [입력 인자 정합성 검증 - Security Input Validation]
 # ------------------------------------------------------------------------------
 if [[ ! "$CONTAINER_NAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
-  echo "❌ [Error] Invalid container name format." >&2
+  echo " [Error] Invalid container name format." >&2
   exit 1
 fi
 if [[ ! "$DURATION" =~ ^[0-9]+$ ]] || [ "$DURATION" -eq 0 ]; then
-  echo "❌ [Error] Duration must be a positive integer." >&2
+  echo " [Error] Duration must be a positive integer." >&2
   exit 1
 fi
 if [[ ! "$RUNS" =~ ^[0-9]+$ ]] || [ "$RUNS" -eq 0 ]; then
-  echo "❌ [Error] Runs count must be a positive integer." >&2
+  echo " [Error] Runs count must be a positive integer." >&2
   exit 1
 fi
 if [[ ! "$WARMUP_TIME" =~ ^[0-9]+$ ]]; then
-  echo "❌ [Error] Warmup time must be a non-negative integer." >&2
+  echo " [Error] Warmup time must be a non-negative integer." >&2
   exit 1
 fi
 if [[ ! "$LABEL" =~ ^[a-zA-Z0-9_-]+$ ]]; then
-  echo "❌ [Error] Invalid label format. Alphanumeric, underscores, and dashes only." >&2
+  echo " [Error] Invalid label format. Alphanumeric, underscores, and dashes only." >&2
   exit 1
 fi
 # ------------------------------------------------------------------------------
 
 # perf 도구 설치 여부 확인
 if ! command -v perf &> /dev/null; then
-  echo "❌ [Error] 'perf' 도구가 시스템에 설치되어 있지 않거나 PATH에 없습니다." >&2
+  echo " [Error] 'perf' 도구가 시스템에 설치되어 있지 않거나 PATH에 없습니다." >&2
   exit 1
 fi
 
 # sudo 권한 체크 (perf stat -a 및 uncore event 측정에 필수)
 if [ "$EUID" -ne 0 ]; then
-  echo "⚠️  [Warning] Uncore PMU 및 System-wide 수집을 위해 root 권한(sudo)이 필요할 수 있습니다."
+  echo "  [Warning] Uncore PMU 및 System-wide 수집을 위해 root 권한(sudo)이 필요할 수 있습니다."
 fi
 
 # 컨테이너 상태 및 PID 확인
 echo "[INFO] 컨테이너 '$CONTAINER_NAME'의 상태를 검증합니다..."
 if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-  echo "❌ [Error] 컨테이너 '${CONTAINER_NAME}'가 현재 실행 중이 아닙니다." >&2
+  echo " [Error] 컨테이너 '${CONTAINER_NAME}'가 현재 실행 중이 아닙니다." >&2
   exit 1
 fi
 
 PID=$(docker inspect --format '{{.State.Pid}}' "$CONTAINER_NAME")
 VECTORDB_CPUS=$(docker inspect --format '{{.HostConfig.CpusetCpus}}' "$CONTAINER_NAME")
-echo "✅ 컨테이너가 확인되었습니다. (Host PID: $PID, CPUS: ${VECTORDB_CPUS:-All})"
+echo " 컨테이너가 확인되었습니다. (Host PID: $PID, CPUS: ${VECTORDB_CPUS:-All})"
 
 # ==============================================================================
-# 🎯 후보 성능 카운터 리스트 선언 (가설 1 검증 최적화)
+#  후보 성능 카운터 리스트 선언 (가설 1 검증 최적화)
 # ==============================================================================
 CANDIDATE_EVENTS=(
   # A. Core Execution Metrics
@@ -153,7 +153,7 @@ CANDIDATE_EVENTS=(
 )
 
 # ==============================================================================
-# 🔍 호스트에서 실제 측정이 가능한 카운터만 동적 필터링 (Dry-run 검증)
+#  호스트에서 실제 측정이 가능한 카운터만 동적 필터링 (Dry-run 검증)
 # ==============================================================================
 echo "[INFO] 시스템이 지원하는 하드웨어 카운터를 식별하는 중 (Dry-run)..."
 SUPPORTED_EVENTS=()
@@ -171,15 +171,15 @@ for ev in "${CANDIDATE_EVENTS[@]}"; do
   fi
 done
 
-echo "📊 필터링 완료: 후보 ${#CANDIDATE_EVENTS[@]}개 중 ${#SUPPORTED_EVENTS[@]}개 이벤트 지원 확인."
+echo " 필터링 완료: 후보 ${#CANDIDATE_EVENTS[@]}개 중 ${#SUPPORTED_EVENTS[@]}개 이벤트 지원 확인."
 
 if [ ${#SUPPORTED_EVENTS[@]} -eq 0 ]; then
-  echo "❌ [Error] 측정 가능한 성능 카운터가 하나도 없습니다. 커널 설정 및 uncore 드라이버를 확인해 주세요." >&2
+  echo " [Error] 측정 가능한 성능 카운터가 하나도 없습니다. 커널 설정 및 uncore 드라이버를 확인해 주세요." >&2
   exit 1
 fi
 
 # ==============================================================================
-# ⏳ 웜업 대기 (초기 페이지 폴트 등의 노이즈 제거)
+#  웜업 대기 (초기 페이지 폴트 등의 노이즈 제거)
 # ==============================================================================
 if [ $WARMUP_TIME -gt 0 ]; then
   echo "[INFO] 초기 노이즈(Page Fault, Cold Start)를 배제하기 위해 $WARMUP_TIME초 동안 대기(웜업)합니다..."
@@ -192,7 +192,7 @@ RESULT_DIR="$SCRIPT_DIR/perf_results/run_${LABEL}_${TIMESTAMP}"
 mkdir -p "$RESULT_DIR"
 
 echo "========================================================================="
-echo "📈 Starting Perf Performance Profiling"
+echo " Starting Perf Performance Profiling"
 echo "========================================================================="
 echo "   - Target Container : $CONTAINER_NAME (PID: $PID)"
 echo "   - Save Directory   : $RESULT_DIR"
@@ -201,7 +201,7 @@ echo "   - Total Runs       : $RUNS runs"
 echo "========================================================================="
 
 # ==============================================================================
-# 🔄 실전 루프 기동 (60초씩 N번 연속 측정)
+#  실전 루프 기동 (60초씩 N번 연속 측정)
 # ==============================================================================
 # perf stat 아규먼트용 문자열 구성
 EVENT_STR=""
@@ -214,19 +214,19 @@ for ev in "${SUPPORTED_EVENTS[@]}"; do
 done
 
 for ((run=1; run<=RUNS; run++)); do
-  echo "🔄 [Run $run/$RUNS] perf stat 데이터 수집 중... ($DURATION초 대기)"
+  echo " [Run $run/$RUNS] perf stat 데이터 수집 중... ($DURATION초 대기)"
   RAW_LOG="$RESULT_DIR/raw_run_$run.txt"
   
   # 시스템 전체(-a)로 Qdrant 바인딩 영역을 포괄하여 대역폭 및 큐 지표 정밀 측정
   sudo perf stat -a -e "$EVENT_STR" sleep "$DURATION" &> "$RAW_LOG"
   
-  echo "✅ Run $run 완료."
+  echo " Run $run 완료."
   # 측정 간 3초 휴식
   sleep 3
 done
 
 # ==============================================================================
-# 📊 수집 로그 자동 파싱 및 평균 계산 (분석 자동화)
+#  수집 로그 자동 파싱 및 평균 계산 (분석 자동화)
 # ==============================================================================
 echo "[INFO] 수집된 perf 로그를 종합하고 평균값(Average)을 계산하는 중..."
 
@@ -235,7 +235,7 @@ SUMMARY_CSV="$RESULT_DIR/perf_summary.csv"
 
 # 파일 헤더 생성
 echo "=========================================================================" > "$SUMMARY_TXT"
-echo "📊 CXL VectorDB 가설 1 검증 - 성능 분석 요약 (Average of $RUNS Runs)" >> "$SUMMARY_TXT"
+echo " CXL VectorDB 가설 1 검증 - 성능 분석 요약 (Average of $RUNS Runs)" >> "$SUMMARY_TXT"
 echo "   - Target : $CONTAINER_NAME (PID: $PID)" >> "$SUMMARY_TXT"
 echo "   - Label  : $LABEL" >> "$SUMMARY_TXT"
 echo "   - Time   : $(date)" >> "$SUMMARY_TXT"
@@ -282,16 +282,16 @@ for ev in "${SUPPORTED_EVENTS[@]}"; do
   csv_str="$csv_str,$avg_formatted,counts"
   
   # 요약본 파일에 출력
-  printf "📍 %-55s | Avg: %-15s | [ %s ]\n" "$ev" "$avg_formatted" "$run_str" >> "$SUMMARY_TXT"
+  printf " %-55s | Avg: %-15s | [ %s ]\n" "$ev" "$avg_formatted" "$run_str" >> "$SUMMARY_TXT"
   echo "$csv_str" >> "$SUMMARY_CSV"
 done
 
 # ==============================================================================
-# 🧠 가설 1 검증 - 통합 마이크로아키텍처 유도 분석 지표 (Unified Indicators)
+#  가설 1 검증 - 통합 마이크로아키텍처 유도 분석 지표 (Unified Indicators)
 # ==============================================================================
 echo "" >> "$SUMMARY_TXT"
 echo "=========================================================================" >> "$SUMMARY_TXT"
-echo "📊 가설 1 검증 - 통합 마이크로아키텍처 분석 지표 (Unified Indicators)" >> "$SUMMARY_TXT"
+echo " 가설 1 검증 - 통합 마이크로아키텍처 분석 지표 (Unified Indicators)" >> "$SUMMARY_TXT"
 echo "=========================================================================" >> "$SUMMARY_TXT"
 
 # 파싱 유틸리티 함수
@@ -319,8 +319,8 @@ rw_ratio=$(echo "$retired_loads / $retired_stores" | bc -l)
 rw_ratio_fmt=$(printf "%.2f" "$rw_ratio" 2>/dev/null || echo "0.00")
 
 echo "  [A. Core Execution Metrics]" >> "$SUMMARY_TXT"
-echo "  📌 Memory-Bound Ratio           : $mem_bound_ratio_fmt % (Mem Bound Slots: $topdown_mem_bound, Total Slots: $slots)" >> "$SUMMARY_TXT"
-echo "  📌 Application R/W Ratio         : $rw_ratio_fmt (Loads: $retired_loads, Stores: $retired_stores)" >> "$SUMMARY_TXT"
+echo "   Memory-Bound Ratio           : $mem_bound_ratio_fmt % (Mem Bound Slots: $topdown_mem_bound, Total Slots: $slots)" >> "$SUMMARY_TXT"
+echo "   Application R/W Ratio         : $rw_ratio_fmt (Loads: $retired_loads, Stores: $retired_stores)" >> "$SUMMARY_TXT"
 echo "" >> "$SUMMARY_TXT"
 
 # ------------------------------------------------------------------------------
@@ -337,8 +337,8 @@ tau_wbq=$(echo "$rxc_occupancy_wbq / $rxc_inserts_wbq" | bc -l)
 tau_wbq_fmt=$(printf "%.2f" "$tau_wbq" 2>/dev/null || echo "0.00")
 
 echo "  [B. Ingress Buffer Queueing Delay - Read vs. Write Backpressure]" >> "$SUMMARY_TXT"
-echo "  📌 Average Read Ingress Delay (τ_RRQ)   : $tau_rrq_fmt cycles/req (Occupancy: $rxc_occupancy_rrq, Inserts: $rxc_inserts_rrq)" >> "$SUMMARY_TXT"
-echo "  📌 Average Write Ingress Delay (τ_WBQ)  : $tau_wbq_fmt cycles/req (Occupancy: $rxc_occupancy_wbq, Inserts: $rxc_inserts_wbq)" >> "$SUMMARY_TXT"
+echo "   Average Read Ingress Delay (τ_RRQ)   : $tau_rrq_fmt cycles/req (Occupancy: $rxc_occupancy_rrq, Inserts: $rxc_inserts_rrq)" >> "$SUMMARY_TXT"
+echo "   Average Write Ingress Delay (τ_WBQ)  : $tau_wbq_fmt cycles/req (Occupancy: $rxc_occupancy_wbq, Inserts: $rxc_inserts_wbq)" >> "$SUMMARY_TXT"
 echo "" >> "$SUMMARY_TXT"
 
 # ------------------------------------------------------------------------------
@@ -365,10 +365,10 @@ tau_remote_ddr_write=$(echo "$occ_rfo_remote / $ins_rfo_remote" | bc -l)
 tau_remote_ddr_write_fmt=$(printf "%.2f" "$tau_remote_ddr_write" 2>/dev/null || echo "0.00")
 
 echo "  [C. DDR5 Round-Trip Time - Read vs. Write RTT]" >> "$SUMMARY_TXT"
-echo "  📌 Local DDR5 Read RTT (τ_Local_DDR_Read)   : $tau_local_ddr_read_fmt cycles (Occupancy: $occ_drd_local_ddr, Inserts: $ins_drd_local_ddr)" >> "$SUMMARY_TXT"
-echo "  📌 Local DDR5 Write RTT (τ_Local_DDR_Write) : $tau_local_ddr_write_fmt cycles (Occupancy: $occ_rfo_local, Inserts: $ins_rfo_local)" >> "$SUMMARY_TXT"
-echo "  📌 Remote DDR5 Read RTT (τ_Remote_DDR_Read)   : $tau_remote_ddr_read_fmt cycles (Occupancy: $occ_drd_remote_ddr, Inserts: $ins_drd_remote_ddr)" >> "$SUMMARY_TXT"
-echo "  📌 Remote DDR5 Write RTT (τ_Remote_DDR_Write) : $tau_remote_ddr_write_fmt cycles (Occupancy: $occ_rfo_remote, Inserts: $ins_rfo_remote)" >> "$SUMMARY_TXT"
+echo "   Local DDR5 Read RTT (τ_Local_DDR_Read)   : $tau_local_ddr_read_fmt cycles (Occupancy: $occ_drd_local_ddr, Inserts: $ins_drd_local_ddr)" >> "$SUMMARY_TXT"
+echo "   Local DDR5 Write RTT (τ_Local_DDR_Write) : $tau_local_ddr_write_fmt cycles (Occupancy: $occ_rfo_local, Inserts: $ins_rfo_local)" >> "$SUMMARY_TXT"
+echo "   Remote DDR5 Read RTT (τ_Remote_DDR_Read)   : $tau_remote_ddr_read_fmt cycles (Occupancy: $occ_drd_remote_ddr, Inserts: $ins_drd_remote_ddr)" >> "$SUMMARY_TXT"
+echo "   Remote DDR5 Write RTT (τ_Remote_DDR_Write) : $tau_remote_ddr_write_fmt cycles (Occupancy: $occ_rfo_remote, Inserts: $ins_rfo_remote)" >> "$SUMMARY_TXT"
 echo "" >> "$SUMMARY_TXT"
 
 # ------------------------------------------------------------------------------
@@ -403,10 +403,10 @@ tau_remote_cxl_write=$(echo "$remote_cxl_write_occ / $remote_cxl_write_ins" | bc
 tau_remote_cxl_write_fmt=$(printf "%.2f" "$tau_remote_cxl_write" 2>/dev/null || echo "0.00")
 
 echo "  [D. CXL.mem Round-Trip Time - Read vs. Write RTT]" >> "$SUMMARY_TXT"
-echo "  📌 Local CXL Read RTT (Explicit) (τ_Local_CXL_Read)  : $tau_local_cxl_read_fmt cycles (Occupancy: $occ_drd_cxl_local, Inserts: $ins_drd_cxl_local)" >> "$SUMMARY_TXT"
-echo "  📌 Local CXL Write RTT (Explicit) (τ_Local_CXL_Write): $tau_local_cxl_write_fmt cycles (Occupancy: $occ_rfo_cxl_local, Inserts: $ins_rfo_cxl_local)" >> "$SUMMARY_TXT"
-echo "  📌 Remote CXL Read RTT (Derived) (τ_Remote_CXL_Read)  : $tau_remote_cxl_read_fmt cycles (Occupancy: $remote_cxl_read_occ, Inserts: $remote_cxl_read_ins)" >> "$SUMMARY_TXT"
-echo "  📌 Remote CXL Write RTT (Derived) (τ_Remote_CXL_Write): $tau_remote_cxl_write_fmt cycles (Occupancy: $remote_cxl_write_occ, Inserts: $remote_cxl_write_ins)" >> "$SUMMARY_TXT"
+echo "   Local CXL Read RTT (Explicit) (τ_Local_CXL_Read)  : $tau_local_cxl_read_fmt cycles (Occupancy: $occ_drd_cxl_local, Inserts: $ins_drd_cxl_local)" >> "$SUMMARY_TXT"
+echo "   Local CXL Write RTT (Explicit) (τ_Local_CXL_Write): $tau_local_cxl_write_fmt cycles (Occupancy: $occ_rfo_cxl_local, Inserts: $ins_rfo_cxl_local)" >> "$SUMMARY_TXT"
+echo "   Remote CXL Read RTT (Derived) (τ_Remote_CXL_Read)  : $tau_remote_cxl_read_fmt cycles (Occupancy: $remote_cxl_read_occ, Inserts: $remote_cxl_read_ins)" >> "$SUMMARY_TXT"
+echo "   Remote CXL Write RTT (Derived) (τ_Remote_CXL_Write): $tau_remote_cxl_write_fmt cycles (Occupancy: $remote_cxl_write_occ, Inserts: $remote_cxl_write_ins)" >> "$SUMMARY_TXT"
 echo "" >> "$SUMMARY_TXT"
 
 # ------------------------------------------------------------------------------
@@ -431,13 +431,13 @@ bw_upi=$(echo "($upi_txl_flits * 8) / ($avg_time_elapsed * 1000000000)" | bc -l)
 bw_upi_fmt=$(printf "%.4f" "$bw_upi" 2>/dev/null || echo "0.0000")
 
 echo "  [E. Interconnect Bandwidth]" >> "$SUMMARY_TXT"
-echo "  📌 UPI Transmit Bandwidth (BW_UPI)      : $bw_upi_fmt GB/s (Flits: $upi_txl_flits, Avg Time: ${avg_time_elapsed}s)" >> "$SUMMARY_TXT"
+echo "   UPI Transmit Bandwidth (BW_UPI)      : $bw_upi_fmt GB/s (Flits: $upi_txl_flits, Avg Time: ${avg_time_elapsed}s)" >> "$SUMMARY_TXT"
 echo "" >> "$SUMMARY_TXT"
 
 
 
 echo "========================================================================="
-echo "🎉 성능 분석 측정이 성공적으로 완료되었습니다!"
+echo " 성능 분석 측정이 성공적으로 완료되었습니다!"
 echo "   - 보고서 요약본 : $SUMMARY_TXT"
 echo "   - CSV 가시화 데이터: $SUMMARY_CSV"
 echo "========================================================================="

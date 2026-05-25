@@ -1,4 +1,4 @@
-# 🚀 CXL VectorDB Build & Run Pipeline (BGE-base-en-v1.5)
+#  CXL VectorDB Build & Run Pipeline (BGE-base-en-v1.5)
 
 이 리포지토리는 CXL(Compute Express Link) 및 NUMA(Non-Uniform Memory Access) 아키텍처 환경에서 **Qdrant VectorDB의 성능 벤치마크 및 리소스 격리 시뮬레이션**을 수행하기 위해 최적화된 독립형 파이프라인 리포지토리입니다.
 
@@ -6,7 +6,7 @@
 
 ---
 
-## 🗺️ 아키텍처 및 시스템 흐름 (System Workflow)
+##  아키텍처 및 시스템 흐름 (System Workflow)
 
 본 파이프라인은 CPU 서버(VectorDB 구동)와 GPU 서버(실시간 임베딩 연산) 간의 원격 고속 통신을 활용하여 동작합니다.
 
@@ -27,26 +27,26 @@ sequenceDiagram
 
 ---
 
-## 📂 디렉토리 구조 (Directory Structure)
+##  디렉토리 구조 (Directory Structure)
 
 불필요한 구형 Docker 이미지 빌드 파일들을 걷어내고, 호스트 직접 가동 및 통신 구조로 가볍고 깨끗하게 정리되었습니다.
 
 ```text
 cxl_vectordb/
-├── run_qdrant_only.sh           # 🖥️ [CPU 서버] 단일 Qdrant VectorDB 컨테이너 가동 (NUMA 바인딩 지원)
-├── run_dual_qdrants.sh          # ⚡ [CPU 서버] 듀얼 소켓 격리형 Multi-Instance Qdrant 가동 (CXL/DDR 메모리 튜닝)
-├── qdrant_numactl_docker_guide.md # 🐳 Docker 컨테이너 수준의 커널 NUMA 바인딩 기술 가이드
-├── gpu_side/                    # 🚀 [GPU 서버] 실시간 임베딩 및 데이터 업로드 파트
-│   ├── run_gpu_ingestion.sh     # GPU inline 임베딩 및 원격 Qdrant 삽입 실행 쉘
-│   ├── build_vectorDB.py        # Qdrant 연결, 컬렉션 검증 및 고속 삽입 파이썬 스크립트
-│   └── download_huggingface.py  # 원본 데이터셋 및 임베딩 모델 로컬 다운로더
-├── Data/                        # 📂 [로컬 전용] Qdrant DB 스토리지 볼륨 영역 (.gitignore에 지정되어 Git 비대상)
-└── README.md                    # 본 문서
+ run_qdrant_only.sh           #  [CPU 서버] 단일 Qdrant VectorDB 컨테이너 가동 (NUMA 바인딩 지원)
+ run_dual_qdrants.sh          #  [CPU 서버] 듀얼 소켓 격리형 Multi-Instance Qdrant 가동 (CXL/DDR 메모리 튜닝)
+ qdrant_numactl_docker_guide.md #  Docker 컨테이너 수준의 커널 NUMA 바인딩 기술 가이드
+ gpu_side/                    #  [GPU 서버] 실시간 임베딩 및 데이터 업로드 파트
+    run_gpu_ingestion.sh     # GPU inline 임베딩 및 원격 Qdrant 삽입 실행 쉘
+    build_vectorDB.py        # Qdrant 연결, 컬렉션 검증 및 고속 삽입 파이썬 스크립트
+    download_huggingface.py  # 원본 데이터셋 및 임베딩 모델 로컬 다운로더
+ Data/                        #  [로컬 전용] Qdrant DB 스토리지 볼륨 영역 (.gitignore에 지정되어 Git 비대상)
+ README.md                    # 본 문서
 ```
 
 ---
 
-## 📥 사전 준비: 데이터셋 및 모델 다운로드 (Prerequisites)
+##  사전 준비: 데이터셋 및 모델 다운로드 (Prerequisites)
 
 GPU 서버에서 원격 Ingestion을 구동하기 위해 필요한 **파이썬 패키지 환경**과 **대용량 데이터셋**, **임베딩 모델**을 다운로드하고 준비합니다.
 
@@ -81,12 +81,12 @@ python3 download_huggingface.py \
 
 ---
 
-## 🏃‍♂️ 실행 가이드 (Execution Guide)
+##  실행 가이드 (Execution Guide)
 
 ### 1️⃣ CPU 서버: Qdrant VectorDB 가동
 CPU 서버(호스트)에서 데이터가 저장될 VectorDB 컨테이너를 가동합니다.
 
-#### 💡 단일 인스턴스 기동 시 (일반 테스트)
+####  단일 인스턴스 기동 시 (일반 테스트)
 ```bash
 # 기본 모드 기동 (호스트 전체 자원 사용)
 bash run_qdrant_only.sh
@@ -95,7 +95,7 @@ bash run_qdrant_only.sh
 bash run_qdrant_only.sh --numa
 ```
 
-#### ⚡ 듀얼 소켓 독립 인스턴스 기동 시 (대칭/비대칭 성능 평가)
+####  듀얼 소켓 독립 인스턴스 기동 시 (대칭/비대칭 성능 평가)
 각 소켓(Socket 0, Socket 1)에 개별 Qdrant 인스턴스를 띄우고 메모리 정책(Policy)을 개별 부여합니다.
 ```bash
 # weighted interleave (DDR/CXL 가중치 배분) 정책으로 듀얼 기동
@@ -123,12 +123,12 @@ cd gpu_side
 
 ---
 
-### 🔄 3️⃣ 데이터 복제 및 듀얼 소켓 평가 (Replication)
+###  3️⃣ 데이터 복제 및 듀얼 소켓 평가 (Replication)
 단일 서버 빌드가 완전히 완료되면, CPU 서버에서 해당 Qdrant 스토리지 폴더를 복제하여 `qdrant_storage_socket0`와 `qdrant_storage_socket1`로 나눈 뒤 `run_dual_qdrants.sh`를 사용해 서로 다른 NUMA 메모리 정책 하에서 Qdrant 벤치마크 평가를 동일한 데이터 기반으로 즉시 수행할 수 있습니다.
 
 ---
 
-## 🏆 핵심 최적화 장점 요약
+##  핵심 최적화 장점 요약
 1. **네트워크 병목 최소화**: GPU에서 연산 완료된 벡터 임베딩 값을 gRPC 채널로 전송하여 원격 주입 속도를 극대화했습니다.
 2. **도커 이식성**: 복잡한 환경 설정 없이 공식 `qdrant/qdrant:latest` 이미지를 활용하면서 커널 레벨의 `numactl` 바인딩을 주입합니다.
 3. **완벽한 메모리 제어**: DDR-only, CXL-only, Weighted Interleave 등 최신 CXL 하드웨어 성능 검증을 위한 시나리오 정책을 즉각적으로 테스트할 수 있습니다.

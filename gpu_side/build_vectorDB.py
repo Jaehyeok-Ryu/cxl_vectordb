@@ -131,7 +131,7 @@ def argument_parser():
         description="Insert embeddings into Qdrant VectorDB"
     )
 
-    # ── 데이터셋 ───────────────────────────────────────────────────────────── #
+    #  데이터셋  #
     parser.add_argument("--dataset-path",    type=str, default="/app/wiki_test",
                         help="HF load_from_disk 경로")
     parser.add_argument("--document-count",  type=int, default=1_000_000_000,
@@ -139,19 +139,19 @@ def argument_parser():
     parser.add_argument("--collection-name", type=str, default="wiki_passages",
                         help="Qdrant 컬렉션 이름")
 
-    # ── Qdrant 연결 ────────────────────────────────────────────────────────── #
+    #  Qdrant 연결  #
     parser.add_argument("--host", type=str, default="vectorDB_container",
                         help="Qdrant 호스트 (Docker 컨테이너명 또는 IP)")
     parser.add_argument("--port", type=int, default=6333,
                         help="Qdrant 포트 (기본값: 6333)")
 
-    # ── 삽입 설정 ─────────────────────────────────────────────────────────── #
+    #  삽입 설정  #
     parser.add_argument("--upload-workers",  type=int, default=4,
                         help="Qdrant 업로드 병렬 스레드 수")
     parser.add_argument("--upload-batch",    type=int, default=10000,
                         help="Qdrant 업로드 배치 크기")
 
-    # ── Mode B: 인라인 임베딩 ─────────────────────────────────────────────── #
+    #  Mode B: 인라인 임베딩  #
     parser.add_argument("--inline-embed",    action="store_true",
                         help="[Mode B] raw 텍스트 데이터셋을 직접 임베딩 후 삽입")
     parser.add_argument("--embedding-model", type=str, default="BAAI/bge-base-en-v1.5",
@@ -184,7 +184,7 @@ def argument_parser():
 def main():
     args = argument_parser()
 
-    # ── 데이터셋 로드 ─────────────────────────────────────────────────────── #
+    #  데이터셋 로드  #
     if not os.path.exists(args.dataset_path):
         print(f"[ERROR] Dataset path not found: '{args.dataset_path}'", flush=True)
         sys.exit(1)
@@ -205,7 +205,7 @@ def main():
     print(f"[INFO] Dataset rows: {len(dataset):,}", flush=True)
     print(f"[INFO] Columns: {dataset.column_names}", flush=True)
 
-    # ── Mode 결정 ─────────────────────────────────────────────────────────── #
+    #  Mode 결정  #
     if args.inline_embed:
         # Mode B: raw text → embed on-the-fly
         print("[MODE] B: Inline embedding enabled", flush=True)
@@ -242,12 +242,12 @@ def main():
 
     print(f"[INFO] Vector dimension: {vector_dim}", flush=True)
 
-    # ── Qdrant 클라이언트 설정 ────────────────────────────────────────────── #
+    #  Qdrant 클라이언트 설정  #
     print(f"[INFO] Connecting to Qdrant at {args.host}:{args.port}", flush=True)
     client = QdrantClient(host=args.host, port=args.port)
     collection_name = args.collection_name
 
-    # ── 컬렉션 확인 / 생성 ────────────────────────────────────────────────── #
+    #  컬렉션 확인 / 생성  #
     try:
         client.get_collection(collection_name=collection_name)
         print(f"[INFO] Collection '{collection_name}' already exists.", flush=True)
@@ -261,7 +261,7 @@ def main():
             ),
         )
 
-    # ── 기존 삽입 개수 확인 (재시작 지원) ────────────────────────────────── #
+    #  기존 삽입 개수 확인 (재시작 지원)  #
     try:
         existing_count = client.count(collection_name=collection_name, timeout=3000).count
     except Exception as e:
@@ -277,7 +277,7 @@ def main():
         print("[INFO] No more data to add.", flush=True)
         return
 
-    # ── 업로드 함수 (Mode A) ─────────────────────────────────────────────── #
+    #  업로드 함수 (Mode A)  #
     def upload_precomputed(start: int, end: int):
         t = time.time()
         batch = dataset.select(range(start, end))
@@ -299,7 +299,7 @@ def main():
             flush=True,
         )
 
-    # ── 업로드 함수 (Mode B) ─────────────────────────────────────────────── #
+    #  업로드 함수 (Mode B)  #
     def upload_inline(start: int, end: int, current_id: int) -> int:
         t = time.time()
         # 임베딩 배치는 embed_batch_size 단위로 처리
@@ -355,7 +355,7 @@ def main():
         )
         return current_id + len(all_vecs)
 
-    # ── 실제 삽입 ─────────────────────────────────────────────────────────── #
+    #  실제 삽입  #
     total_start = time.time()
 
     if args.inline_embed:
@@ -383,7 +383,7 @@ def main():
     print(f"[INFO] Total upload time: {total_elapsed:.1f}s "
           f"({total_elapsed/60:.1f} min)", flush=True)
 
-    # ── 최종 개수 확인 ────────────────────────────────────────────────────── #
+    #  최종 개수 확인  #
     try:
         total_points = client.count(collection_name=collection_name, timeout=3000).count
         print(f"[INFO] Total points in '{collection_name}': {total_points:,}", flush=True)

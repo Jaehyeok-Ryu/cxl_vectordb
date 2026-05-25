@@ -50,7 +50,7 @@ if [[ ! "$POLICY" =~ ^(ddr-only|weighted)$ ]]; then
 fi
 
 echo "===================================================================="
-echo "🚀 Dual Socket Isolated Qdrant VectorDB for Hypothesis Testing"
+echo " Dual Socket Isolated Qdrant VectorDB for Hypothesis Testing"
 echo "   - Selected Policy: ${POLICY^^}"
 echo "===================================================================="
 
@@ -154,18 +154,18 @@ done
 # 7. 기동 완료 안내 출력
 HOST_IP=$(hostname -I | awk '{print $1}')
 echo "===================================================================="
-echo "🎉 Dual Qdrant VectorDB Instances Active for Hypothesis!"
+echo " Dual Qdrant VectorDB Instances Active for Hypothesis!"
 echo "===================================================================="
-echo "👉 Socket 0"
+echo " Socket 0"
 echo "   - Container: $CONTAINER_0"
 echo "   - HTTP Port: 6333 | gRPC Port: 6334"
 echo "   - Storage  : $STORAGE_0"
 echo ""
-echo "👉 Socket 1"
+echo " Socket 1"
 echo "   - Container: $CONTAINER_1"
 echo "   - HTTP Port: 6343 | gRPC Port: 6344"
 echo "   - Storage  : $STORAGE_1"
 echo "===================================================================="
-echo "💡 외부 GPU/클라이언트 설정 IP:"
+echo " 외부 GPU/클라이언트 설정 IP:"
 echo "   - CPU_SERVER_IP = \"$HOST_IP\""
 echo "===================================================================="

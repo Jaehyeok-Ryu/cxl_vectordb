@@ -1,27 +1,27 @@
-# 📈 VectorDB Intel Xeon PMU (perf) 성능 계측 및 분석 가이드
+#  VectorDB Intel Xeon PMU (perf) 성능 계측 및 분석 가이드
 
 이 디렉터리는 가설 1(Hypothesis 1)인 **"Inter-socket interconnect의 대역폭 제약과 원격 메모리 접근(Remote access)의 지연 증가가 CHA ToR/IRQ 큐 체증(HOL blocking)을 유발하고, 이로 인해 로컬 메모리 트랜잭션까지 제한(Throttling)되어 시스템 전체 Throughput이 저하된다"**는 주장을 실측 데이터를 기반으로 수학적으로 검증하기 위해 구성된 성능 분석 툴킷입니다.
 
 ---
 
-## 🗺️ 디렉터리 구조 및 가동 흐름
+##  디렉터리 구조 및 가동 흐름
 
 ```
 perf_metrics/
- ├── profile_perf_metrics.sh  # 수집 및 자동 분석 통합 쉘 스크립트
- ├── perf_metrics_readme.md   # 본 분석 가이드 문서
- └── perf_results/            # 성능 분석 결과가 저장되는 아카이빙 폴더
-      └── run_[라벨]_[시간]/
-           ├── raw_run_1.txt  # perf stat 1회차 날것의 데이터
-           ├── raw_run_2.txt  # perf stat 2회차 날것의 데이터
-           ├── raw_run_3.txt  # perf stat 3회차 날것의 데이터
-           ├── perf_summary.txt  # 평균 계측 수치 요약 및 Matchup 결합 분석서
-           └── perf_summary.csv  # 엑셀/판다스 시각화용 통합 CSV 파일
+  profile_perf_metrics.sh  # 수집 및 자동 분석 통합 쉘 스크립트
+  perf_metrics_readme.md   # 본 분석 가이드 문서
+  perf_results/            # 성능 분석 결과가 저장되는 아카이빙 폴더
+       run_[라벨]_[시간]/
+            raw_run_1.txt  # perf stat 1회차 날것의 데이터
+            raw_run_2.txt  # perf stat 2회차 날것의 데이터
+            raw_run_3.txt  # perf stat 3회차 날것의 데이터
+            perf_summary.txt  # 평균 계측 수치 요약 및 Matchup 결합 분석서
+            perf_summary.csv  # 엑셀/판다스 시각화용 통합 CSV 파일
 ```
 
 ---
 
-## 🚀 사용법 및 실행 명령어 (Usage Guide)
+##  사용법 및 실행 명령어 (Usage Guide)
 
 ### 1️⃣ 사전 권한 요구사항
 Uncore PMU(CHA, UPI) 계측 및 System-wide(-a) 카운터 수집을 위해 **root 권한(`sudo`)**이 필요합니다.
@@ -36,7 +36,7 @@ sudo ./profile_perf_metrics.sh --container vectorDB_container_socket0 --duration
 
 ---
 
-## 🎯 측정하는 성능 카운터 지표 정리 (PMU Events Reference)
+##  측정하는 성능 카운터 지표 정리 (PMU Events Reference)
 
 호스트 시스템의 하드웨어 PMU(Performance Monitoring Unit)를 통해 정밀 수집하는 **32가지 핵심 하드웨어 카운터(Events)**의 정의와 의미는 다음과 같습니다.
 
@@ -86,7 +86,7 @@ sudo ./profile_perf_metrics.sh --container vectorDB_container_socket0 --duration
 
 ---
 
-## 📊 13가지 통합 마이크로아키텍처 지표 (Unified Indicators)
+##  13가지 통합 마이크로아키텍처 지표 (Unified Indicators)
 
 스크립트 기동 시 32개의 성능 카운터 중 호스트 아키텍처가 실제로 지원하는 카운터만 동적으로 필터링하여 수집한 후, 다음 13가지 유도 분석 수식을 통해 하드웨어 병목 지표를 자동으로 정밀 산출합니다.
 
@@ -132,14 +132,14 @@ sudo ./profile_perf_metrics.sh --container vectorDB_container_socket0 --duration
 
 ---
 
-## ⚔️ 2대 읽기/쓰기 매치업 상관관계 분석 (Matchup Analysis)
+##  2대 읽기/쓰기 매치업 상관관계 분석 (Matchup Analysis)
 
 도구 실행 완료 시 생성되는 보고서(`perf_summary.txt`) 하단에 아래 2대 매치업 지표가 실시간 계산되어 출력되므로, 이를 연계 분석하여 가설 1의 병목 고리를 완벽하게 증명할 수 있습니다.
 
-### ⚔️ Matchup 1: Ingress Congestion Read-Write Cross-Talk (교차 정체 지연)
+###  Matchup 1: Ingress Congestion Read-Write Cross-Talk (교차 정체 지연)
 * **내용:** Qdrant 가동 중 쓰기 미스 요청으로 인해 CXL 쓰기 버퍼 체증($\tau_{WBQ}$)이 유발될 때, 읽기 큐 대기 시간($\tau_{RRQ}$)이 동시에 동반 급상승하는지 분석합니다. 
 * **의미:** 쓰기 백프레셔가 인입 경계에서 읽기 트랜잭션까지 가로막아 상호 간섭 큐잉 정체(Cross-talk head-of-line blocking)를 유발하고 있음을 수학적으로 입증합니다.
 
-### ⚔️ Matchup 2: Write-Miss Invalidate-on-Write (RFO) Latency Penalty (RFO 패널티)
+###  Matchup 2: Write-Miss Invalidate-on-Write (RFO) Latency Penalty (RFO 패널티)
 * **내용:** 일반 Read RTT 계열 수치 대비 RFO(Request for Ownership) 캐시 무효화가 결합된 Write RTT 수치를 로컬/원격 DRAM 및 CXL 메모리에서 직접 대조 비교합니다.
 * **의미:** 쓰기 작업량이 늘어남에 따라 UPI 대역폭($BW_{UPI}$)이 어떻게 급상승하는지 매치업하여, 원격 캐시 무효화 프로토콜이 인터커넥트 고갈과 메모리 트랜잭션 제한을 일으키는 트리거임을 증명합니다.
