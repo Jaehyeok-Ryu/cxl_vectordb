@@ -301,6 +301,31 @@ for sock in "${SOCK_ARRAY[@]}"; do
   echo "   UPI Transmit Bandwidth (BW_UPI)      : $bw_upi_fmt GB/s (Flits: $upi_txl_flits, Avg Time: ${DURATION}s)" >> "$SUMMARY_TXT"
   echo "" >> "$SUMMARY_TXT"
   
+  # ------------------------------------------------------------------------------
+  # F. Physical Memory Access Distribution (Local vs Remote)
+  # ------------------------------------------------------------------------------
+  local_ddr_total=$(echo "$ins_drd_local_ddr + $ins_rfo_local" | bc -l)
+  remote_ddr_total=$(echo "$ins_drd_remote_ddr + $ins_rfo_remote" | bc -l)
+  local_cxl_total=$(echo "$ins_drd_cxl_local + $ins_rfo_cxl_local" | bc -l)
+  remote_cxl_total=$(echo "$remote_cxl_read_ins + $remote_cxl_write_ins" | bc -l)
+  
+  total_local_access=$(echo "$local_ddr_total + $local_cxl_total" | bc -l)
+  total_remote_access=$(echo "$remote_ddr_total + $remote_cxl_total" | bc -l)
+  
+  total_local_bw=$(echo "($total_local_access * 64) / ($DURATION * 1000000000)" | bc -l)
+  total_local_bw_fmt=$(printf "%.4f" "$total_local_bw" 2>/dev/null || echo "0.0000")
+  total_remote_bw=$(echo "($total_remote_access * 64) / ($DURATION * 1000000000)" | bc -l)
+  total_remote_bw_fmt=$(printf "%.4f" "$total_remote_bw" 2>/dev/null || echo "0.0000")
+  
+  echo "  [F. Physical Memory Access Distribution (Local vs Remote)]" >> "$SUMMARY_TXT"
+  echo "   Total Local Memory Access   : $total_local_access counts ($total_local_bw_fmt GB/s)" >> "$SUMMARY_TXT"
+  echo "      - Local DDR  : $local_ddr_total counts" >> "$SUMMARY_TXT"
+  echo "      - Local CXL  : $local_cxl_total counts" >> "$SUMMARY_TXT"
+  echo "   Total Remote Memory Access  : $total_remote_access counts ($total_remote_bw_fmt GB/s)" >> "$SUMMARY_TXT"
+  echo "      - Remote DDR : $remote_ddr_total counts" >> "$SUMMARY_TXT"
+  echo "      - Remote CXL : $remote_cxl_total counts" >> "$SUMMARY_TXT"
+  echo "" >> "$SUMMARY_TXT"
+  
   echo "  [Raw Averaged Values]" >> "$SUMMARY_TXT"
   for ev in "${SUPPORTED_EVENTS[@]}"; do
     avg_val=$(get_avg_val_for_socket "$ev" "$sock")
