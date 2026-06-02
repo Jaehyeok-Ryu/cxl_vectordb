@@ -8,7 +8,7 @@
 
 set -e
 
-DURATION=60
+DURATION=300
 WARMUP=30
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CXL_DIR="/home/sawi/cxl_vectordb"
@@ -100,7 +100,7 @@ EOF
     local perf_pid=$!
     
     local perf_data="/tmp/perf_record_socket_${socket_val}.data"
-    perf record -a -e cycles:k -F 99 -o "${perf_data}" -- sleep "${DURATION}" >/dev/null 2>&1 &
+    perf record -a -e cycles:k -F 19 -o "${perf_data}" -- sleep "${DURATION}" >/dev/null 2>&1 &
     local record_pid=$!
     
     wait "${perf_pid}" 2>/dev/null || true
@@ -165,11 +165,14 @@ EOF
     RESULTS["SOCK_${socket_val}_fault_ms"]="${fault_lat_total_ms}"
     RESULTS["SOCK_${socket_val}_mig_ms"]="${actual_mig_ms}"
     
+    local raw_report_file="${SCRIPT_DIR}/perf_results/perf_report_raw_socket_${socket_val}.txt"
     local top_funcs_file="${SCRIPT_DIR}/perf_results/top_kernel_funcs_socket_${socket_val}.txt"
     if [ -f "${perf_data}" ]; then
         echo "Processing perf report for top kernel functions (Socket ${socket_val})..."
+        # Save the full raw perf report
+        perf report -i "${perf_data}" --stdio --no-children --no-call-graph -s symbol > "${raw_report_file}" || true
         # Get top 15 kernel functions, ignore headers, disable call graphs, and format cleanly
-        perf report -i "${perf_data}" --stdio --no-children --no-call-graph -s symbol | grep -v "^#" | awk 'NF { printf "  %7s  %s %s\n", $1, $2, $3 }' | head -n 15 > "${top_funcs_file}" || true
+        grep -v "^#" "${raw_report_file}" | awk 'NF { printf "  %7s  %s %s\n", $1, $2, $3 }' | head -n 15 > "${top_funcs_file}" || true
     fi
 
     echo "========================================================================" >> "${RAW_RESULT_FILE}"
@@ -184,7 +187,7 @@ EOF
     rm -f "${bpf_script}" "${bpf_output}" "${perf_raw}" "${perf_data}"
 }
 
-ITERATIONS=1
+ITERATIONS=3
 
 echo "========================================================================" | tee "${RESULT_FILE}"
 echo " WEIGHTED INTERLEAVE 'SOCKET' OPTION COMPARATIVE EVALUATION & KERNEL BREAKDOWN" | tee -a "${RESULT_FILE}"
