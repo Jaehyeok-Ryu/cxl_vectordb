@@ -9,7 +9,7 @@
 set -e
 
 DURATION=300
-WARMUP=30
+WARMUP=60
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CXL_DIR="/home/sawi/cxl_vectordb"
 RESULT_FILE="${SCRIPT_DIR}/perf_results/weighted_socket_comparison_${DURATION}s.txt"
@@ -41,11 +41,11 @@ initialize_and_run() {
     
     echo "[INFO] Dropping OS Page caches..."
     sync
-    echo 3 > /proc/sys/vm/drop_caches
+    sudo sync && echo 3 | sudo tee /proc/sys/vm/drop_caches
     
     echo "[INFO] Setting __auto_type = 0 and socket = ${socket_val}..."
-    echo 0 > /sys/kernel/mm/mempolicy/weighted_interleave/__auto_type
-    echo "${socket_val}" > /sys/kernel/mm/mempolicy/weighted_interleave/socket
+    echo 0 | sudo tee /sys/kernel/mm/mempolicy/weighted_interleave/__auto_type
+    echo "${socket_val}" | sudo tee /sys/kernel/mm/mempolicy/weighted_interleave/socket
     
     echo "  * Current __auto_type = $(cat /sys/kernel/mm/mempolicy/weighted_interleave/__auto_type)"
     echo "  * Current socket      = $(cat /sys/kernel/mm/mempolicy/weighted_interleave/socket)"
@@ -100,7 +100,7 @@ EOF
     local perf_pid=$!
     
     local perf_data="/tmp/perf_record_socket_${socket_val}.data"
-    perf record -a -e cycles:k -F 19 -o "${perf_data}" -- sleep "${DURATION}" >/dev/null 2>&1 &
+    perf record -g -a -e cycles:k -F 19 -o "${perf_data}" -- sleep "${DURATION}" >/dev/null 2>&1 &
     local record_pid=$!
     
     wait "${perf_pid}" 2>/dev/null || true
@@ -165,12 +165,15 @@ EOF
     RESULTS["SOCK_${socket_val}_fault_ms"]="${fault_lat_total_ms}"
     RESULTS["SOCK_${socket_val}_mig_ms"]="${actual_mig_ms}"
     
-    local raw_report_file="${SCRIPT_DIR}/perf_results/perf_report_raw_socket_${socket_val}.txt"
-    local top_funcs_file="${SCRIPT_DIR}/perf_results/top_kernel_funcs_socket_${socket_val}.txt"
+    local raw_report_file="${SCRIPT_DIR}/perf_results/perf_report_raw_socket_${socket_val}_iter${iter_val:-1}.txt"
+    local hierarchy_report_file="${SCRIPT_DIR}/perf_results/perf_report_hierarchy_socket_${socket_val}_iter${iter_val:-1}.txt"
+    local top_funcs_file="${SCRIPT_DIR}/perf_results/top_kernel_funcs_socket_${socket_val}_iter${iter_val:-1}.txt"
     if [ -f "${perf_data}" ]; then
         echo "Processing perf report for top kernel functions (Socket ${socket_val})..."
         # Save the full raw perf report
         perf report -i "${perf_data}" --stdio --no-children --no-call-graph -s symbol > "${raw_report_file}" || true
+        # Save the hierarchical call-graph report
+        perf report -i "${perf_data}" --stdio -g > "${hierarchy_report_file}" || true
         # Get top 15 kernel functions, ignore headers, disable call graphs, and format cleanly
         grep -v "^#" "${raw_report_file}" | awk 'NF { printf "  %7s  %s %s\n", $1, $2, $3 }' | head -n 15 > "${top_funcs_file}" || true
     fi
@@ -184,7 +187,10 @@ EOF
     cat "${bpf_output}" >> "${RAW_RESULT_FILE}" || true
     echo "" >> "${RAW_RESULT_FILE}"
 
-    rm -f "${bpf_script}" "${bpf_output}" "${perf_raw}" "${perf_data}"
+    # Move perf.data to a permanent location instead of deleting it
+    mv "${perf_data}" "${SCRIPT_DIR}/perf_results/perf_record_socket_${socket_val}_iter${iter_val:-1}.data"
+
+    rm -f "${bpf_script}" "${bpf_output}" "${perf_raw}"
 }
 
 ITERATIONS=3
@@ -318,7 +324,8 @@ for socket_val in 0 1; do
     echo "[ Socket ${socket_val} - Top Kernel Functions ]" | tee -a "${RESULT_FILE}"
     echo "  Overhead  Symbol" | tee -a "${RESULT_FILE}"
     echo "  --------  -------------------------------------------------" | tee -a "${RESULT_FILE}"
-    top_funcs_file="${SCRIPT_DIR}/perf_results/top_kernel_funcs_socket_${socket_val}.txt"
+    # Use the first iteration's top functions for the final summary output
+    top_funcs_file="${SCRIPT_DIR}/perf_results/top_kernel_funcs_socket_${socket_val}_iter1.txt"
     if [ -f "${top_funcs_file}" ]; then
         cat "${top_funcs_file}" | while read -r line; do
             printf "  %s\n" "$line" | tee -a "${RESULT_FILE}"
